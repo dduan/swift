@@ -3177,6 +3177,8 @@ ERROR(method_call_in_closure_without_explicit_self,none,
 ERROR(implicit_use_of_self_in_closure,none,
       "implicit use of 'self' in closure; use 'self.' to make"
       " capture semantics explicit", ())
+WARNING(implicit_use_of_self,none,
+      "implicit use of 'self'; please add 'self.'", ())
 
 WARNING(recursive_accessor_reference,none,
         "attempting to %select{access|modify}1 %0 within its own "

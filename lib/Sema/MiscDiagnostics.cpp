@@ -1316,10 +1316,63 @@ static void diagRecursivePropertyAccess(const Expr *E, const DeclContext *DC) {
   const_cast<Expr *>(E)->walk(walker);
 }
 
-/// Look for any property references in closures that lack a "self." qualifier.
-/// Within a closure, we require that the source code contain "self." explicitly
-/// because 'self' is captured, not the property value.  This is a common source
-/// of confusion, so we force an explicit self.
+static void diagnoseMissingSelf(const Expr *E, const DeclContext *DC) {
+  class DiagnoseWalker : public ASTWalker {
+    ASTContext &Ctx;
+    SmallVector<AbstractClosureExpr *, 4> Closures;
+  public:
+    explicit DiagnoseWalker(ASTContext &ctx, AbstractClosureExpr *ACE)
+        : Ctx(ctx), Closures() {
+          if (ACE)
+            Closures.push_back(ACE);
+        }
+
+    /// Return true if this is a closure expression that will require explicit
+    /// use or capture of "self." for qualification of member references.
+    static bool isClosureRequiringSelfQualification(
+                  const AbstractClosureExpr *CE) {
+      // If the closure's type was inferred to be noescape, then it doesn't
+      // need qualification.
+      return !AnyFunctionRef(const_cast<AbstractClosureExpr *>(CE))
+               .isKnownNoEscape();
+    }
+
+
+    // Don't walk into nested decls.
+    bool walkToDeclPre(Decl *D) override { return false; }
+
+    bool shouldWalkIntoNonSingleExpressionClosure() override { return false; }
+
+    std::pair<bool, Expr *> walkToExprPre(Expr *E) override {
+      auto &Diags = Ctx.Diags;
+      auto *DRE = dyn_cast<DeclRefExpr>(E);
+
+      if (DRE && DRE->isImplicit() && isa<VarDecl>(DRE->getDecl()) &&
+          cast<VarDecl>(DRE->getDecl())->isSelfParameter())
+        Diags.diagnose(E->getLoc(), diag::implicit_use_of_self);
+
+      return { true, E };
+    }
+  };
+
+  AbstractClosureExpr *ACE = nullptr;
+  if (DC->isLocalContext()) {
+    while (DC->getParent()->isLocalContext() && !ACE) {
+      if (auto *closure = dyn_cast<AbstractClosureExpr>(DC))
+        if (DiagnoseWalker::isClosureRequiringSelfQualification(closure))
+          ACE = const_cast<AbstractClosureExpr *>(closure);
+      DC = DC->getParent();
+    }
+  }
+  auto &ctx = DC->getASTContext();
+  const_cast<Expr *>(E)->walk(DiagnoseWalker(ctx, ACE));
+}
+
+/// Look for any property references in closures that lack a 'self.' qualifier.
+/// Within a closure, we require that the source code contain 'self.' explicitly
+/// (or that the closure explicitly capture 'self' in the capture list) because
+/// 'self' is captured, not the property value.  This is a common source of
+/// confusion, so we force an explicit self.
 static void diagnoseImplicitSelfUseInClosure(const Expr *E,
                                              const DeclContext *DC) {
   class DiagnoseWalker : public ASTWalker {
@@ -4084,6 +4137,7 @@ void swift::performSyntacticExprDiagnostics(const Expr *E,
   TypeChecker::diagnoseSelfAssignment(E);
   diagSyntacticUseRestrictions(E, DC, isExprStmt);
   diagRecursivePropertyAccess(E, DC);
+  diagnoseMissingSelf(E, DC);
   diagnoseImplicitSelfUseInClosure(E, DC);
   diagnoseUnintendedOptionalBehavior(E, DC);
   maybeDiagnoseCallToKeyValueObserveMethod(E, DC);
