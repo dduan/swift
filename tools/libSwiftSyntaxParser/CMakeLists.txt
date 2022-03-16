@@ -52,6 +52,13 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
 endif()
 
 add_dependencies(parser-lib libSwiftSyntaxParser)
+target_compile_options(libSwiftSyntaxParser PRIVATE
+  "SHELL:-Xclang --linker-option=-lc"
+  "SHELL:-Xclang --linker-option=-lc++"
+  "SHELL:-Xclang --linker-option=-lncurses"
+  "SHELL:-Xclang --linker-option=-lz"
+)
+target_link_options(libSwiftSyntaxParser PRIVATE -Wl,-x -Wl,-r --ld-path=${CMAKE_CURRENT_SOURCE_DIR}/linker.sh)
 swift_install_in_component(TARGETS libSwiftSyntaxParser
   ARCHIVE DESTINATION "lib${LLVM_LIBDIR_SUFFIX}/swift/${SWIFT_SDK_${SWIFT_HOST_VARIANT_SDK}_LIB_SUBDIR}" COMPONENT parser-lib
   LIBRARY DESTINATION "lib${LLVM_LIBDIR_SUFFIX}/swift/${SWIFT_SDK_${SWIFT_HOST_VARIANT_SDK}_LIB_SUBDIR}" COMPONENT parser-lib
