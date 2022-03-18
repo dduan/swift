@@ -18,8 +18,7 @@ import unittest
 from build_swift import cache_utils
 from build_swift.versions import Version
 
-import six
-from six import StringIO
+from io import StringIO
 
 
 __all__ = [
@@ -161,7 +160,7 @@ def requires_python(version):
     greater or equal to the required version.
     """
 
-    if isinstance(version, six.string_types):
+    if isinstance(version, str):
         version = Version(version)
 
     if _PYTHON_VERSION >= version:
