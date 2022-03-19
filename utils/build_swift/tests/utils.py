@@ -14,12 +14,10 @@ import os
 import platform
 import sys
 import unittest
+from io import StringIO
 
 from build_swift import cache_utils
 from build_swift.versions import Version
-
-from io import StringIO
-
 
 __all__ = [
     'quiet_output',

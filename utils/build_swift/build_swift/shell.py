@@ -24,10 +24,10 @@ import shutil
 import subprocess
 import sys
 from copy import copy as _copy
+from pathlib import Path
+from pipes import quote as _quote
 from shlex import split
 from subprocess import CalledProcessError
-from pipes import quote as _quote
-from pathlib import Path
 
 
 __all__ = [

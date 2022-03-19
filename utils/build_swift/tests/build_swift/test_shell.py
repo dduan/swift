@@ -9,14 +9,13 @@
 
 from __future__ import absolute_import, unicode_literals
 
+import builtins
 import collections
 import sys
 import unittest
-import builtins
+from io import StringIO
 
 from build_swift import shell
-
-from io import StringIO
 
 from .. import utils
 

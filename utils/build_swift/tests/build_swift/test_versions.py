@@ -13,6 +13,7 @@ import unittest
 
 from build_swift.versions import Version
 
+
 class TestVersion(unittest.TestCase):
     """Unit tests for the Version class.
     """

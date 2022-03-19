@@ -330,7 +330,8 @@ class TestDriverArgumentParserMeta(type):
         return test
 
 
-class TestDriverArgumentParser(unittest.TestCase, metaclass=TestDriverArgumentParserMeta):
+class TestDriverArgumentParser(
+        unittest.TestCase, metaclass=TestDriverArgumentParserMeta):
 
     def _parse_args(self, args):
         try:
